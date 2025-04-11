@@ -36,28 +36,33 @@ class NotificationManager {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized else { return }
             
-            // Remove any existing notifications for this event
+            // Remove any existing notifications for this event first
             self.removeNotifications(for: event)
             
-            let notificationDays = [3, 2, 1]
-            
-            for days in notificationDays {
+            // Use the offsets stored in the event
+            for offset in event.notificationOffsets {
                 let content = UNMutableNotificationContent()
                 content.title = event.title
-                content.body = "\(days) day\(days == 1 ? "" : "s") until \(event.title)"
+                
+                let timeRemainingDescription = self.timeRemainingString(from: offset)
+                if offset == NotificationOffset.atEventTime {
+                    content.body = "\(event.title) is starting now!"
+                } else {
+                    content.body = "\(timeRemainingDescription) until \(event.title)"
+                }
                 content.sound = .default
                 
-                // Calculate notification date
-                let notificationDate = Calendar.current.date(byAdding: .day, value: -days, to: event.date)!
+                // Calculate notification date by subtracting offset from event date
+                let notificationDate = event.date.addingTimeInterval(-offset)
                 
                 // Only schedule if the notification date is in the future
                 guard notificationDate > Date() else { continue }
                 
-                let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: notificationDate)
+                let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: notificationDate)
                 let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
                 
-                // Create unique identifier for this notification
-                let identifier = "\(event.id)-\(days)days"
+                // Create unique identifier for this notification using the offset
+                let identifier = "\(event.id)-\(offset)"
                 let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
                 
                 UNUserNotificationCenter.current().add(request) { error in
@@ -70,7 +75,20 @@ class NotificationManager {
     }
     
     func removeNotifications(for event: Event) {
-        let identifiers = [3, 2, 1].map { "\(event.id)-\(String($0))days" }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)
+        // We need to remove all *possible* notifications, not just the currently selected ones
+        // because the user might have changed the frequency.
+        let possibleIdentifiers = NotificationOffset.allOptions.map { "\(event.id)-\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: possibleIdentifiers)
+    }
+    
+    // Helper function to create readable time remaining string
+    private func timeRemainingString(from offset: TimeInterval) -> String {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute]
+        formatter.unitsStyle = .full // e.g., "3 days", "12 hours", "30 minutes"
+        formatter.maximumUnitCount = 2 // Show more detail if needed
+        // Use `.brief` or `.abbreviated` if you prefer shorter strings like "3d", "1h"
+        // formatter.unitsStyle = .abbreviated
+        return formatter.string(from: offset) ?? "Custom time"
     }
 }
