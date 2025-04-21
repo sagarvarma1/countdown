@@ -21,7 +21,28 @@ struct countdownApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // Runtime check for device idiom
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                ContentView()
+            } else {
+                // Display a message on iPad instead of loading the app UI
+                VStack {
+                    Spacer()
+                    Image(systemName: "iphone.gen2") // Example iPhone icon
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.gray)
+                        .padding(.bottom)
+                    Text("Event Countdown is designed for iPhone.")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                    Spacer()
+                }
+                .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            }
         }
     }
 }
