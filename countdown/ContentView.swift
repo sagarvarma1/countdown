@@ -73,7 +73,8 @@ struct ContentView: View {
     @State private var showingAddNotificationSheet = false // Separate state for Add sheet
     @State private var showingEditNotificationSheet = false // Separate state for Edit sheet
     
-    private let backgroundColor = Color(red: 0.98, green: 0.97, blue: 0.95)
+    // Ensure backgroundColor remains light in both light and dark modes
+    private let backgroundColor = Color(UIColor(red: 0.98, green: 0.97, blue: 0.95, alpha: 1.0))
     private let accentColor = Color(red: 0.4, green: 0.3, blue: 0.2)
     
     var body: some View {
@@ -323,7 +324,7 @@ struct ContentView: View {
                 .padding(.vertical, 8)
                 .background(Color(UIColor.systemBackground))
             }
-            .presentationDetents([.height(280), .medium, .large]) // Adjusted height
+            .presentationDetents([.height(320), .medium, .large]) // Increased height
             .presentationDragIndicator(.visible)
             // Nested sheet for notification frequency (for Add Event)
             .sheet(isPresented: $showingAddNotificationSheet) {
@@ -423,7 +424,7 @@ struct ContentView: View {
                 .padding(.vertical, 8)
                 .background(Color(UIColor.systemBackground))
             }
-            .presentationDetents([.height(280), .medium, .large]) // Adjusted height for new button
+            .presentationDetents([.height(320), .medium, .large]) // Increased height
             .presentationDragIndicator(.visible)
             // Nested sheet for notification frequency (for Edit Event)
             .sheet(isPresented: $showingEditNotificationSheet) {
